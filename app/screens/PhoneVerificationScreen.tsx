@@ -23,7 +23,7 @@ const getCountryFlag = (countryCode: string): string => {
 export const PhoneVerificationScreen = ({
   setMode,
 }: {
-  setMode: (mode: "signup" | "signin" | "phone") => void;
+  setMode: (mode: "signup" | "signin" | "phone" | "verify") => void;
 }) => {
   const [selectedCountry, setSelectedCountry] = useState(
     allCountries.find((c) => c.iso2 === "rw") || allCountries[0],
@@ -31,6 +31,8 @@ export const PhoneVerificationScreen = ({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const isPhoneValid = phoneNumber.length === 9;
 
   const filteredCountries = allCountries.filter(
     (country) =>
@@ -77,10 +79,20 @@ export const PhoneVerificationScreen = ({
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
           />
+          {phoneNumber.length > 0 &&
+            (phoneNumber.length === 9 ? (
+              <Ionicons name="checkmark-circle" size={24} color="#6c5ce7" />
+            ) : (
+              <Ionicons name="close-circle" size={24} color="#ff6b6b" />
+            ))}
         </View>
       </View>
 
-      <TouchableOpacity style={styles.signInBtn}>
+      <TouchableOpacity
+        style={styles.signInBtn}
+        onPress={() => isPhoneValid && setMode("verify")}
+        disabled={!isPhoneValid}
+      >
         <Text style={styles.signInText}>Continue</Text>
       </TouchableOpacity>
 
@@ -187,6 +199,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f6f6f6",
     paddingHorizontal: 14,
+    paddingRight: 12,
     borderRadius: 12,
   },
   phoneInput: {

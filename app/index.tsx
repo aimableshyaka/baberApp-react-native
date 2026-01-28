@@ -3,10 +3,17 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { PhoneVerificationScreen } from "./screens/PhoneVerificationScreen";
 import { SigninScreen } from "./screens/SigninScreen";
 import { SignupScreen } from "./screens/SignupScreen";
+import { VerifyCodeScreen } from "./screens/VerifyCodeScreen";
 
 const BaberApp = () => {
-  const [mode, setMode] = useState<"signup" | "signin" | "phone">("signin");
+  const [mode, setMode] = useState<"signup" | "signin" | "phone" | "verify">(
+    "signin",
+  );
   const [step, setStep] = useState(1);
+
+  if (mode === "verify") {
+    return <VerifyCodeScreen setMode={setMode} />;
+  }
 
   if (mode === "phone") {
     return <PhoneVerificationScreen setMode={setMode} />;
