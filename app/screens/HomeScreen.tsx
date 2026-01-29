@@ -10,107 +10,210 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import MapScreen from "./MapScreen";
 
 const HomeScreen = () => {
   const [activeTab, setActiveTab] = React.useState("home");
   const [showLocationModal, setShowLocationModal] = React.useState(true);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [selectedFilter, setSelectedFilter] = React.useState("All");
+  const [showSearchResults, setShowSearchResults] = React.useState(false);
 
   return (
     <View style={styles.screen}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.profileRow}>
-            <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
-              style={styles.avatar}
-            />
-            <View>
-              <Text style={styles.greeting}>Hi, Robert Fox</Text>
-              <Text style={styles.location}>
-                <Ionicons name="location-outline" size={12} /> 6391 Elgin St,
-                Celina, Delaware
-              </Text>
+      {activeTab === "location" ? (
+        <MapScreen onBack={() => setActiveTab("home")} />
+      ) : (
+        <>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.profileRow}>
+                <Image
+                  source={{ uri: "https://i.pravatar.cc/100" }}
+                  style={styles.avatar}
+                />
+                <View>
+                  <Text style={styles.greeting}>Hi, Robert Fox</Text>
+                  <Text style={styles.location}>
+                    <Ionicons name="location-outline" size={12} /> 6391 Elgin
+                    St, Celina, Delaware
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.headerIcons}>
+                <Ionicons name="notifications-outline" size={22} />
+                <Ionicons
+                  name="heart-outline"
+                  size={22}
+                  style={{ marginLeft: 16 }}
+                />
+              </View>
             </View>
-          </View>
 
-          <View style={styles.headerIcons}>
-            <Ionicons name="notifications-outline" size={22} />
-            <Ionicons
-              name="heart-outline"
-              size={22}
-              style={{ marginLeft: 16 }}
-            />
-          </View>
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={18} color="#999" />
-          <TextInput
-            placeholder="Search by Salons"
-            placeholderTextColor="#aaa"
-            style={styles.searchInput}
-          />
-          <Ionicons name="options-outline" size={18} color="#999" />
-        </View>
-
-        {/* Categories */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {categories.map((item, i) => (
-            <View key={i} style={styles.category}>
-              <Image source={{ uri: item.image }} style={styles.catImage} />
-              <Text style={styles.catText}>{item.title}</Text>
+            {/* Search */}
+            <View style={styles.searchBox}>
+              <Ionicons name="search-outline" size={18} color="#999" />
+              <TextInput
+                placeholder="Search by Salons"
+                placeholderTextColor="#aaa"
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  setShowSearchResults(text.length > 0);
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowSearchResults(true)}>
+                <Ionicons name="options-outline" size={18} color="#999" />
+              </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
 
-        {/* Promo Card */}
-        <View style={styles.promoCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.discount}>-40%</Text>
-            <Text style={styles.promoText}>
-              Voucher for your next haircut service
-            </Text>
-            <TouchableOpacity style={styles.bookBtn}>
-              <Text style={styles.bookText}>Book now</Text>
-            </TouchableOpacity>
-          </View>
+            {!showSearchResults ? (
+              <>
+                {/* Categories */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {categories.map((item, i) => (
+                    <View key={i} style={styles.category}>
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.catImage}
+                      />
+                      <Text style={styles.catText}>{item.title}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
 
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1522336572468-97b06e8ef143",
-            }}
-            style={styles.promoImage}
-          />
-        </View>
+                {/* Promo Card */}
+                <View style={styles.promoCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.discount}>-40%</Text>
+                    <Text style={styles.promoText}>
+                      Voucher for your next haircut service
+                    </Text>
+                    <TouchableOpacity style={styles.bookBtn}>
+                      <Text style={styles.bookText}>Book now</Text>
+                    </TouchableOpacity>
+                  </View>
 
-        {/* Nearest Salon */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nearest salon</Text>
-          <Text style={styles.viewAll}>View All</Text>
-        </View>
+                  <Image
+                    source={{
+                      uri: "https://images.unsplash.com/photo-1522336572468-97b06e8ef143",
+                    }}
+                    style={styles.promoImage}
+                  />
+                </View>
 
-        <View style={styles.salonCard}>
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
-            }}
-            style={styles.salonImage}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.salonName}>Bella Rinova</Text>
-            <Text style={styles.salonAddr}>
-              6391 Elgin St, Celina, Delaware
-            </Text>
+                {/* Nearest Salon */}
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Nearest salon</Text>
+                  <Text style={styles.viewAll}>View All</Text>
+                </View>
 
-            <View style={styles.salonFooter}>
-              <Text style={styles.rating}>⭐ 4.8</Text>
-              <Text style={styles.distance}>5 km</Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+                <View style={styles.salonCard}>
+                  <Image
+                    source={{
+                      uri: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
+                    }}
+                    style={styles.salonImage}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.salonName}>Bella Rinova</Text>
+                    <Text style={styles.salonAddr}>
+                      6391 Elgin St, Celina, Delaware
+                    </Text>
+
+                    <View style={styles.salonFooter}>
+                      <Text style={styles.rating}>⭐ 4.8</Text>
+                      <Text style={styles.distance}>5 km</Text>
+                    </View>
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Filter Tabs */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.filterTabsContainer}
+                >
+                  {filterOptions.map((filter) => (
+                    <TouchableOpacity
+                      key={filter}
+                      style={[
+                        styles.filterTab,
+                        selectedFilter === filter && styles.filterTabActive,
+                      ]}
+                      onPress={() => setSelectedFilter(filter)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterTabText,
+                          selectedFilter === filter &&
+                            styles.filterTabTextActive,
+                        ]}
+                      >
+                        {filter}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                {/* Popular Artists */}
+                <View style={styles.artistsSection}>
+                  <Text style={styles.sectionTitle}>Popular artist</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {artists.map((artist, i) => (
+                      <TouchableOpacity key={i} style={styles.artistItem}>
+                        <Image
+                          source={{ uri: artist.image }}
+                          style={styles.artistImage}
+                        />
+                        <Text style={styles.artistName}>{artist.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Search Results */}
+                <View style={styles.resultsHeader}>
+                  <Text style={styles.resultsCount}>
+                    Result found({salons.length})
+                  </Text>
+                </View>
+
+                {salons.map((salon, i) => (
+                  <View key={i} style={styles.salonResultCard}>
+                    <Image
+                      source={{ uri: salon.image }}
+                      style={styles.resultSalonImage}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.resultSalonName}>{salon.name}</Text>
+                      <Text style={styles.resultSalonAddr}>
+                        {salon.address}
+                      </Text>
+                      <View style={styles.resultSalonFooter}>
+                        <Text style={styles.resultRating}>
+                          ⭐ {salon.rating}
+                        </Text>
+                        <Text style={styles.resultDistance}>
+                          📍 {salon.distance} km
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity style={styles.bookBtnResult}>
+                      <Text style={styles.bookBtnResultText}>Book</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
+        </>
+      )}
 
       {/* Location Permission Modal */}
       <Modal
@@ -224,6 +327,58 @@ const categories = [
   {
     title: "Facial",
     image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f",
+  },
+];
+
+const filterOptions = ["All", "Indian", "Italian", "Savings", "Sort"];
+
+const artists = [
+  {
+    name: "Lily",
+    image: "https://i.pravatar.cc/100?img=1",
+  },
+  {
+    name: "Lee",
+    image: "https://i.pravatar.cc/100?img=2",
+  },
+  {
+    name: "Connor",
+    image: "https://i.pravatar.cc/100?img=3",
+  },
+  {
+    name: "Jason",
+    image: "https://i.pravatar.cc/100?img=4",
+  },
+];
+
+const salons = [
+  {
+    name: "Green Apple",
+    address: "6391 Elgin St, Celina, Delaware",
+    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9",
+    rating: 4.5,
+    distance: 1.5,
+  },
+  {
+    name: "Bella Rinova",
+    address: "5421 Inglewood Dr, Englewood, M",
+    image: "https://images.unsplash.com/photo-1552664730-d307ca884978",
+    rating: 4.0,
+    distance: 2.5,
+  },
+  {
+    name: "The Galleria",
+    address: "1145 Parker Dr, Albertson, New",
+    image: "https://images.unsplash.com/photo-1507925921903-88852de7f0a7",
+    rating: 3.0,
+    distance: 4.8,
+  },
+  {
+    name: "Michael Saldana",
+    address: "3159 Brushwood Dr, Richardson, TX",
+    image: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04",
+    rating: 4.0,
+    distance: 8.9,
   },
 ];
 
@@ -467,6 +622,121 @@ const styles = StyleSheet.create({
   enableBtnText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "600",
+  },
+
+  filterTabsContainer: {
+    marginBottom: 20,
+  },
+
+  filterTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: "#f0f0f0",
+  },
+
+  filterTabActive: {
+    backgroundColor: "#6c5ce7",
+  },
+
+  filterTabText: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "500",
+  },
+
+  filterTabTextActive: {
+    color: "#fff",
+  },
+
+  artistsSection: {
+    marginBottom: 20,
+  },
+
+  artistItem: {
+    alignItems: "center",
+    marginRight: 16,
+  },
+
+  artistImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+  },
+
+  artistName: {
+    fontSize: 12,
+    color: "#444",
+    fontWeight: "500",
+  },
+
+  resultsHeader: {
+    marginBottom: 16,
+  },
+
+  resultsCount: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111",
+  },
+
+  salonResultCard: {
+    flexDirection: "row",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: "center",
+  },
+
+  resultSalonImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 14,
+    marginRight: 12,
+  },
+
+  resultSalonName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#111",
+  },
+
+  resultSalonAddr: {
+    fontSize: 12,
+    color: "#999",
+    marginVertical: 4,
+  },
+
+  resultSalonFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  resultRating: {
+    fontSize: 12,
+    color: "#444",
+  },
+
+  resultDistance: {
+    fontSize: 12,
+    color: "#999",
+  },
+
+  bookBtnResult: {
+    backgroundColor: "#6c5ce7",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginLeft: 12,
+  },
+
+  bookBtnResultText: {
+    color: "#fff",
+    fontSize: 13,
     fontWeight: "600",
   },
 });
