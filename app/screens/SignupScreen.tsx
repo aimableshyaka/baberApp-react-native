@@ -1,12 +1,15 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { registerUser } from "../api/auth";
 
 export const SignupScreen = ({
   setMode,
@@ -16,6 +19,41 @@ export const SignupScreen = ({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSignup = async () => {
+    // Validation
+    if (!fullName || !email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await registerUser({
+        firstname: fullName,
+        email,
+        password: password,
+      });
+
+      Alert.alert("Success", "Account created successfully!");
+      setMode("phone");
+    } catch (error: any) {
+      Alert.alert(
+        "Signup Error",
+        error.response?.data?.message ||
+          "Failed to create account. Please try again.",
+      );
+      console.error("Signup error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -68,10 +106,15 @@ export const SignupScreen = ({
       </View>
 
       <TouchableOpacity
-        style={styles.signInBtn}
-        onPress={() => setMode("phone")}
+        style={[styles.signInBtn, loading && styles.disabledBtn]}
+        onPress={handleSignup}
+        disabled={loading}
       >
-        <Text style={styles.signInText}>Sign up</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.signInText}>Sign up</Text>
+        )}
       </TouchableOpacity>
 
       <Text style={styles.termsText}>
@@ -155,5 +198,8 @@ const styles = StyleSheet.create({
   signupLink: {
     color: "#6c5ce7",
     fontWeight: "600",
+  },
+  disabledBtn: {
+    opacity: 0.6,
   },
 });
