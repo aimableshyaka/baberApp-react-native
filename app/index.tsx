@@ -1,15 +1,25 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ForgotPasswordScreen } from "./screens/ForgotPasswordScreen";
 import { PhoneVerificationScreen } from "./screens/PhoneVerificationScreen";
+import { ResetEmailScreen } from "./screens/ResetEmailScreen";
 import { SigninScreen } from "./screens/SigninScreen";
 import { SignupScreen } from "./screens/SignupScreen";
 import { VerifyCodeScreen } from "./screens/VerifyCodeScreen";
 
 const BaberApp = () => {
-  const [mode, setMode] = useState<"signup" | "signin" | "phone" | "verify">(
-    "signin",
-  );
+  const [mode, setMode] = useState<
+    "signup" | "signin" | "phone" | "verify" | "forgot" | "resetEmail"
+  >("signin");
   const [step, setStep] = useState(1);
+
+  if (mode === "resetEmail") {
+    return <ResetEmailScreen setMode={setMode} />;
+  }
+
+  if (mode === "forgot") {
+    return <ForgotPasswordScreen setMode={setMode} />;
+  }
 
   if (mode === "verify") {
     return <VerifyCodeScreen setMode={setMode} />;

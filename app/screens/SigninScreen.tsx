@@ -1,4 +1,5 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
@@ -14,12 +15,12 @@ const twitterIcon = require("../../assets/images/customImages/twitter-icon.png")
 export const SigninScreen = ({
   setMode,
 }: {
-  setMode: (mode: "signup" | "signin" | "phone") => void;
+  setMode: (mode: "signup" | "signin" | "phone" | "verify" | "forgot") => void;
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
-
+  const router = useRouter();
   return (
     <View style={styles.container}>
       {/* Back button */}
@@ -67,7 +68,10 @@ export const SigninScreen = ({
       </TouchableOpacity>
 
       {/* Sign in button */}
-      <TouchableOpacity style={styles.signInBtn}>
+      <TouchableOpacity
+        style={styles.signInBtn}
+        onPress={() => router.push("/screens/HomeScreen")}
+      >
         <Text style={styles.signInText}>Sign in</Text>
       </TouchableOpacity>
 
@@ -91,7 +95,7 @@ export const SigninScreen = ({
       </View>
 
       {/* Footer */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={() => setMode("forgot")}>
         <Text style={styles.forgot}>Forgot your password?</Text>
       </TouchableOpacity>
 
