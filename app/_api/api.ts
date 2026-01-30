@@ -1,8 +1,9 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Development machine IP - update this if your IP changes
 // To find your IP: Run `ipconfig` and use the IPv4 Address under your active connection
-const BASE_URL = "http://10.218.222.25:3000";
+const BASE_URL = "http://192.168.1.97:3000";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -12,13 +13,17 @@ export const api = axios.create({
   },
 });
 
-// Add request interceptor for logging
+// Add request interceptor to attach JWT token
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    const token = await AsyncStorage.getItem("auth_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     console.log("📤 API Request:", {
       url: config.baseURL + config.url,
       method: config.method,
-      data: config.data,
+      hasAuth: !!token,
     });
     return config;
   },
@@ -34,7 +39,6 @@ api.interceptors.response.use(
     console.log("✅ API Response:", {
       url: response.config.url,
       status: response.status,
-      data: response.data,
     });
     return response;
   },
@@ -47,6 +51,14 @@ api.interceptors.response.use(
       code: error.code,
       data: error.response?.data,
     });
+
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error.response?.status === 401) {
+      AsyncStorage.removeItem("auth_token");
+      AsyncStorage.removeItem("auth_user");
+      console.warn("Token expired or invalid. User should login again.");
+    }
+
     return Promise.reject(error);
   },
 );

@@ -2,6 +2,8 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   StyleSheet,
   Text,
@@ -9,6 +11,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+// import { loginUser } from "../api/auth";
+import { loginUser } from "../_api/auth";
+import { useAuth } from "../_context/AuthContext";
 
 const twitterIcon = require("../../assets/images/customImages/twitter-icon.png");
 
@@ -20,7 +25,41 @@ export const SigninScreen = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
+
+  const handleSignin = async () => {
+    // Validation
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await loginUser({
+        email,
+        password,
+      });
+
+      // Save token and user to AuthContext and AsyncStorage
+      await login(response.token, response.user);
+
+      Alert.alert("Success", "Logged in successfully!");
+      router.push("/screens/HomeScreen");
+    } catch (error: any) {
+      Alert.alert(
+        "Login Error",
+        error.response?.data?.message ||
+          "Invalid email or password. Please try again.",
+      );
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Back button */}
@@ -69,10 +108,15 @@ export const SigninScreen = ({
 
       {/* Sign in button */}
       <TouchableOpacity
-        style={styles.signInBtn}
-        onPress={() => router.push("/screens/HomeScreen")}
+        style={[styles.signInBtn, loading && styles.disabledBtn]}
+        onPress={handleSignin}
+        disabled={loading}
       >
-        <Text style={styles.signInText}>Sign in</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.signInText}>Sign in</Text>
+        )}
       </TouchableOpacity>
 
       {/* Divider */}
@@ -209,5 +253,8 @@ const styles = StyleSheet.create({
   signupLink: {
     color: "#6c5ce7",
     fontWeight: "600",
+  },
+  disabledBtn: {
+    opacity: 0.6,
   },
 });

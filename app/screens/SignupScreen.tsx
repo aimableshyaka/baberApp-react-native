@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { registerUser } from "../api/auth";
+import { registerUser } from "../_api/auth";
 
 export const SignupScreen = ({
   setMode,
