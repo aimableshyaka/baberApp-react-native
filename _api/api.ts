@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Development machine IP - update this if your IP changes
 // To find your IP: Run `ipconfig` and use the IPv4 Address under your active connection
-const BASE_URL = "http://192.168.1.97:3000";
+const BASE_URL = "http://192.168.1.80:3000";
 
 export const api = axios.create({
   baseURL: BASE_URL,

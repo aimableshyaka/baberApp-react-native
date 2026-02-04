@@ -2,9 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export enum UserRole {
-  ADMIN = "ADMIN",
-  SALON_OWNER = "SALON_OWNER",
-  USER = "USER",
+  CUSTOMER = "Customer",
+  SALON_OWNER = "SalonOwner",
+  ADMIN = "Admin",
 }
 
 export interface User {

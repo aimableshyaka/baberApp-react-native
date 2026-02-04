@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   StyleSheet,
   Text,
   TextInput,
@@ -13,9 +14,9 @@ import {
 } from "react-native";
 // import { loginUser } from "../api/auth";
 import { loginUser } from "../_api/auth";
-import { useAuth } from "../_context/AuthContext";
+import { useAuth, UserRole } from "../_context/AuthContext";
 
-const twitterIcon = require("../../assets/images/customImages/twitter-icon.png");
+const twitterIcon = require("../assets/images/customImages/twitter-icon.png");
 
 export const SigninScreen = ({
   setMode,
@@ -43,11 +44,51 @@ export const SigninScreen = ({
         password,
       });
 
-      // Save token and user to AuthContext and AsyncStorage
-      await login(response.token, response.user);
+      // Check user role
+      const userRole = response.user.role;
 
-      Alert.alert("Success", "Logged in successfully!");
-      router.push("/screens/HomeScreen");
+      // Debug: Log the received role
+      console.log("📋 Received user role:", userRole);
+
+      // If user is ADMIN or SALON_OWNER, show alert and prevent access
+      if (userRole === UserRole.ADMIN || userRole === UserRole.SALON_OWNER) {
+        Alert.alert(
+          "Web Dashboard Required",
+          "This account is designed to be used on the Web Dashboard. Please log in using the web version.",
+          [
+            {
+              text: "Open Web Version",
+              onPress: () => {
+                Linking.openURL("http://localhost:5173/");
+              },
+            },
+            {
+              text: "Cancel",
+              onPress: () => {
+                setEmail("");
+                setPassword("");
+              },
+              style: "cancel",
+            },
+          ],
+        );
+        return;
+      }
+
+      // If CUSTOMER role, proceed with login
+      if (userRole === UserRole.CUSTOMER) {
+        // Save token and user to AuthContext and AsyncStorage
+        await login(response.token, response.user);
+
+        Alert.alert("Success", "Logged in successfully!");
+        router.push("/screens/UserDashboard");
+      } else {
+        Alert.alert(
+          "Error",
+          `Unknown user role: "${userRole}". Please contact support.`,
+        );
+        console.error("❌ Unknown role received:", userRole);
+      }
     } catch (error: any) {
       Alert.alert(
         "Login Error",

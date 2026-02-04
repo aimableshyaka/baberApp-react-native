@@ -2,12 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { forgotPassword } from "../_api/auth";
 
 const router = useRouter();
 
@@ -19,6 +22,39 @@ export const ResetEmailScreen = ({
   ) => void;
 }) => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter your email address");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await forgotPassword({ email });
+      Alert.alert(
+        "Success",
+        response.message || "Reset link sent to your email",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.push("/screens/SigninScreen");
+            },
+          },
+        ],
+      );
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to send reset link";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -51,9 +87,14 @@ export const ResetEmailScreen = ({
       {/* Send Link Button */}
       <TouchableOpacity
         style={styles.sendBtn}
-        onPress={() => router.push("/screens/Codesent")}
+        onPress={handleForgotPassword}
+        disabled={loading}
       >
-        <Text style={styles.sendBtnText}>Send link</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.sendBtnText}>Send link</Text>
+        )}
       </TouchableOpacity>
     </View>
   );

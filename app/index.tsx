@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ForgotPasswordScreen } from "./screens/ForgotPasswordScreen";
-import { PhoneVerificationScreen } from "./screens/PhoneVerificationScreen";
-import { ResetEmailScreen } from "./screens/ResetEmailScreen";
-import { SigninScreen } from "./screens/SigninScreen";
-import { SignupScreen } from "./screens/SignupScreen";
-import { VerifyCodeScreen } from "./screens/VerifyCodeScreen";
+import { ForgotPasswordScreen } from "../_screens/ForgotPasswordScreen";
+import { PhoneVerificationScreen } from "../_screens/PhoneVerificationScreen";
+import { ResetEmailScreen } from "../_screens/ResetEmailScreen";
+import { SigninScreen } from "../_screens/SigninScreen";
+import { SignupScreen } from "../_screens/SignupScreen";
+import { VerifyCodeScreen } from "../_screens/VerifyCodeScreen";
 
 const BaberApp = () => {
   const [mode, setMode] = useState<

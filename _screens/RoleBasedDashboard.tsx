@@ -30,7 +30,7 @@ export const RoleBasedDashboard = () => {
       return <AdminDashboard />;
     case UserRole.SALON_OWNER:
       return <SalonOwnerDashboard />;
-    case UserRole.USER:
+    case UserRole.CUSTOMER:
     default:
       return <HomeScreen />;
   }
