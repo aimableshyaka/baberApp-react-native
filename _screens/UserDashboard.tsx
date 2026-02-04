@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   ScrollView,
@@ -11,7 +12,12 @@ import {
   View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { Booking } from "../_api/booking";
+import {
+  Booking,
+  cancelBooking,
+  getCustomerBookings,
+  rescheduleBooking,
+} from "../_api/booking";
 import {
   getAllSalons,
   getSalonServices,
@@ -48,10 +54,23 @@ const HomeScreen = () => {
     null,
   );
 
-  // Fetch salons on component mount
+  // Bookings management states
+  const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [loadingBookings, setLoadingBookings] = React.useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = React.useState(false);
+  const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(
+    null,
+  );
+  const [newDate, setNewDate] = React.useState("");
+  const [newTime, setNewTime] = React.useState("");
+
+  // Fetch salons and bookings on component mount
   useEffect(() => {
     fetchSalons();
-  }, []);
+    if (activeTab === "bookings") {
+      fetchBookings();
+    }
+  }, [activeTab]);
 
   const fetchSalons = async () => {
     try {
@@ -104,12 +123,273 @@ const HomeScreen = () => {
     console.log("✅ Booking successful:", booking);
     setShowBookingModal(false);
     setShowDetailModal(false);
+    // Refresh bookings if on bookings tab
+    if (activeTab === "bookings") {
+      fetchBookings();
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      setLoadingBookings(true);
+      const data = await getCustomerBookings();
+      setBookings(data);
+      console.log("✅ Bookings loaded:", data.length);
+    } catch (error) {
+      console.error("❌ Failed to fetch bookings:", error);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const handleCancelBooking = (booking: Booking) => {
+    Alert.alert(
+      "Cancel Booking",
+      "Are you sure you want to cancel this booking?",
+      [
+        {
+          text: "No",
+          style: "cancel",
+        },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const bookingId = booking._id || booking.id;
+              if (!bookingId) return;
+
+              await cancelBooking(bookingId);
+              Alert.alert("Success", "Booking cancelled successfully");
+              fetchBookings();
+            } catch (error) {
+              Alert.alert("Error", "Failed to cancel booking");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRescheduleBooking = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setNewDate(booking.bookingDate || "");
+    setNewTime(booking.startTime || "");
+    setShowRescheduleModal(true);
+  };
+
+  const submitReschedule = async () => {
+    try {
+      if (!selectedBooking || !newDate || !newTime) {
+        Alert.alert("Error", "Please select a date and time");
+        return;
+      }
+
+      const bookingId = selectedBooking._id || selectedBooking.id;
+      if (!bookingId) return;
+
+      await rescheduleBooking(bookingId, {
+        newBookingDate: newDate,
+        newStartTime: newTime,
+      });
+
+      Alert.alert("Success", "Booking rescheduled successfully");
+      setShowRescheduleModal(false);
+      fetchBookings();
+    } catch (error) {
+      Alert.alert("Error", "Failed to reschedule booking");
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "confirmed":
+        return "#10b981";
+      case "pending":
+        return "#f59e0b";
+      case "cancelled":
+        return "#ef4444";
+      case "completed":
+        return "#6c5ce7";
+      default:
+        return "#999";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "confirmed":
+        return "checkmark-circle";
+      case "pending":
+        return "time";
+      case "cancelled":
+        return "close-circle";
+      case "completed":
+        return "checkmark-done-circle";
+      default:
+        return "help-circle";
+    }
   };
 
   return (
     <View style={styles.screen}>
       {activeTab === "location" ? (
         <MapScreen onBack={() => setActiveTab("home")} />
+      ) : activeTab === "bookings" ? (
+        <ScrollView style={styles.bookingsContainer}>
+          <View style={styles.bookingsHeader}>
+            <Text style={styles.bookingsTitle}>My Bookings</Text>
+            <TouchableOpacity onPress={fetchBookings}>
+              <Ionicons name="refresh-outline" size={24} color="#6c5ce7" />
+            </TouchableOpacity>
+          </View>
+
+          {loadingBookings ? (
+            <ActivityIndicator
+              size="large"
+              color="#6c5ce7"
+              style={{ marginTop: 40 }}
+            />
+          ) : bookings.length === 0 ? (
+            <View style={styles.emptyBookings}>
+              <Ionicons name="calendar-outline" size={64} color="#ddd" />
+              <Text style={styles.emptyBookingsText}>
+                No bookings yet. Book your first appointment!
+              </Text>
+              <TouchableOpacity
+                style={styles.browseBtn}
+                onPress={() => setActiveTab("home")}
+              >
+                <Text style={styles.browseBtnText}>Browse Salons</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            bookings.map((booking, index) => {
+              const bookingId = booking._id || booking.id || index;
+              const status = booking.status || "pending";
+              const canModify = ["pending", "confirmed"].includes(
+                status.toLowerCase(),
+              );
+
+              return (
+                <View key={bookingId} style={styles.bookingCard}>
+                  <View style={styles.bookingHeader}>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: getStatusColor(status) + "20" },
+                      ]}
+                    >
+                      <Ionicons
+                        name={getStatusIcon(status) as any}
+                        size={16}
+                        color={getStatusColor(status)}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: getStatusColor(status) },
+                        ]}
+                      >
+                        {status}
+                      </Text>
+                    </View>
+                    <Text style={styles.bookingId}>
+                      #{String(bookingId).slice(-6).toUpperCase()}
+                    </Text>
+                  </View>
+
+                  <View style={styles.bookingBody}>
+                    <View style={styles.bookingRow}>
+                      <Ionicons name="storefront" size={18} color="#666" />
+                      <Text style={styles.bookingLabel}>Salon:</Text>
+                      <Text style={styles.bookingValue}>
+                        {typeof booking.salonId === "object"
+                          ? (booking.salonId as any)?.name ||
+                            (booking.salonId as any)?.salonName ||
+                            "N/A"
+                          : booking.salon?.name ||
+                            booking.salon?.salonName ||
+                            "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.bookingRow}>
+                      <Ionicons name="cut" size={18} color="#666" />
+                      <Text style={styles.bookingLabel}>Service:</Text>
+                      <Text style={styles.bookingValue}>
+                        {typeof booking.serviceId === "object"
+                          ? (booking.serviceId as any)?.name ||
+                            (booking.serviceId as any)?.serviceName ||
+                            "N/A"
+                          : booking.service?.name ||
+                            booking.service?.serviceName ||
+                            "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.bookingRow}>
+                      <Ionicons name="calendar" size={18} color="#666" />
+                      <Text style={styles.bookingLabel}>Date:</Text>
+                      <Text style={styles.bookingValue}>
+                        {booking.bookingDate || "N/A"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.bookingRow}>
+                      <Ionicons name="time" size={18} color="#666" />
+                      <Text style={styles.bookingLabel}>Time:</Text>
+                      <Text style={styles.bookingValue}>
+                        {booking.startTime || "N/A"}
+                      </Text>
+                    </View>
+
+                    {(booking as any).totalPrice && (
+                      <View style={styles.bookingRow}>
+                        <Ionicons name="cash" size={18} color="#666" />
+                        <Text style={styles.bookingLabel}>Price:</Text>
+                        <Text style={styles.bookingPrice}>
+                          ${(booking as any).totalPrice}
+                        </Text>
+                      </View>
+                    )}
+
+                    {booking.notes && (
+                      <View style={styles.notesSection}>
+                        <Ionicons name="document-text" size={18} color="#666" />
+                        <Text style={styles.notesText}>{booking.notes}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {canModify && (
+                    <View style={styles.bookingActions}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.rescheduleBtn]}
+                        onPress={() => handleRescheduleBooking(booking)}
+                      >
+                        <Ionicons name="calendar" size={18} color="#6c5ce7" />
+                        <Text style={styles.rescheduleBtnText}>Reschedule</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.cancelBtn]}
+                        onPress={() => handleCancelBooking(booking)}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={18}
+                          color="#ef4444"
+                        />
+                        <Text style={styles.cancelBtnText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
       ) : (
         <>
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -548,6 +828,54 @@ const HomeScreen = () => {
         ) : null}
       </Modal>
 
+      {/* Reschedule Modal */}
+      <Modal
+        visible={showRescheduleModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowRescheduleModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: "50%" }]}>
+            <View style={styles.rescheduleHeader}>
+              <Text style={styles.rescheduleTitle}>Reschedule Booking</Text>
+              <TouchableOpacity onPress={() => setShowRescheduleModal(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.rescheduleForm}>
+              <Text style={styles.inputLabel}>New Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.rescheduleInput}
+                value={newDate}
+                onChangeText={setNewDate}
+                placeholder="2024-12-25"
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.inputLabel}>New Time (HH:MM)</Text>
+              <TextInput
+                style={styles.rescheduleInput}
+                value={newTime}
+                onChangeText={setNewTime}
+                placeholder="14:00"
+                placeholderTextColor="#999"
+              />
+
+              <TouchableOpacity
+                style={styles.rescheduleSubmitBtn}
+                onPress={submitReschedule}
+              >
+                <Text style={styles.rescheduleSubmitText}>
+                  Confirm Reschedule
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
@@ -574,12 +902,12 @@ const HomeScreen = () => {
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab("menu")}
+          onPress={() => setActiveTab("bookings")}
         >
           <Ionicons
-            name={activeTab === "menu" ? "apps" : "apps-outline"}
+            name={activeTab === "bookings" ? "calendar" : "calendar-outline"}
             size={24}
-            color={activeTab === "menu" ? "#6c5ce7" : "#999"}
+            color={activeTab === "bookings" ? "#6c5ce7" : "#999"}
           />
         </TouchableOpacity>
 
@@ -1269,6 +1597,239 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+
+  // Bookings Management Styles
+  bookingsContainer: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+
+  bookingsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+
+  bookingsTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  emptyBookings: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+
+  emptyBookingsText: {
+    fontSize: 16,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 16,
+    marginBottom: 24,
+  },
+
+  browseBtn: {
+    backgroundColor: "#6c5ce7",
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+
+  browseBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  bookingCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  bookingHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+  },
+
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+
+  bookingId: {
+    fontSize: 12,
+    color: "#999",
+    fontWeight: "500",
+  },
+
+  bookingBody: {
+    padding: 16,
+  },
+
+  bookingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 8,
+  },
+
+  bookingLabel: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+    width: 70,
+  },
+
+  bookingValue: {
+    fontSize: 14,
+    color: "#111",
+    fontWeight: "600",
+    flex: 1,
+  },
+
+  bookingPrice: {
+    fontSize: 16,
+    color: "#6c5ce7",
+    fontWeight: "700",
+    flex: 1,
+  },
+
+  notesSection: {
+    flexDirection: "row",
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 8,
+    gap: 8,
+  },
+
+  notesText: {
+    fontSize: 13,
+    color: "#666",
+    fontStyle: "italic",
+    flex: 1,
+  },
+
+  bookingActions: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    padding: 12,
+    gap: 12,
+  },
+
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+
+  rescheduleBtn: {
+    backgroundColor: "#6c5ce720",
+  },
+
+  rescheduleBtnText: {
+    color: "#6c5ce7",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  cancelBtn: {
+    backgroundColor: "#ef444420",
+  },
+
+  cancelBtnText: {
+    color: "#ef4444",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  // Reschedule Modal Styles
+  rescheduleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+
+  rescheduleTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  rescheduleForm: {
+    padding: 16,
+  },
+
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+    marginTop: 12,
+  },
+
+  rescheduleInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: "#333",
+    backgroundColor: "#f9f9f9",
+  },
+
+  rescheduleSubmitBtn: {
+    backgroundColor: "#6c5ce7",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 24,
+  },
+
+  rescheduleSubmitText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
